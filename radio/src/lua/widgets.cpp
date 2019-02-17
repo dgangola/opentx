@@ -23,6 +23,9 @@
 #include "opentx.h"
 #include "bin_allocator.h"
 #include "lua_api.h"
+#if defined(INTERACTIVE_WIDGETS)
+#include "keys.h"
+#endif
 
 #define WIDGET_SCRIPTS_MAX_INSTRUCTIONS    (10000/100)
 #define MANUAL_SCRIPTS_MAX_INSTRUCTIONS    (20000/100)
@@ -265,7 +268,12 @@ class LuaWidget: public Widget
 
     virtual void update();
 
+#if defined(INTERACTIVE_WIDGETS)
+    virtual void refresh(event_t event, int page);
+    virtual int getPages() { return(getFactory()->getPages()); }
+#else
     virtual void refresh();
+#endif
 
     virtual void background();
 
@@ -297,6 +305,9 @@ class LuaWidgetFactory: public WidgetFactory
       updateFunction(0),
       refreshFunction(0),
       backgroundFunction(0)
+#if defined(INTERACTIVE_WIDGETS)
+      ,pages(0)
+#endif
     {
     }
 
@@ -330,11 +341,18 @@ class LuaWidgetFactory: public WidgetFactory
       return widget;
     }
 
+#if defined(INTERACTIVE_WIDGETS)
+    virtual int getPages() const { return(pages); }
+#endif
+
   protected:
     int createFunction;
     int updateFunction;
     int refreshFunction;
     int backgroundFunction;
+#if defined(INTERACTIVE_WIDGETS)
+    int pages;
+#endif
 };
 
 void LuaWidget::update()
@@ -373,7 +391,11 @@ const char * LuaWidget::getErrorMessage() const
   return errorMessage;
 }
 
+#if defined(INTERACTIVE_WIDGETS)
+void LuaWidget::refresh(event_t event, int page)
+#else
 void LuaWidget::refresh()
+#endif
 {
   if (lsWidgets == 0) return;
 
@@ -387,7 +409,13 @@ void LuaWidget::refresh()
   LuaWidgetFactory * factory = (LuaWidgetFactory *)this->factory;
   lua_rawgeti(lsWidgets, LUA_REGISTRYINDEX, factory->refreshFunction);
   lua_rawgeti(lsWidgets, LUA_REGISTRYINDEX, widgetData);
+#if defined(INTERACTIVE_WIDGETS)
+  lua_pushinteger(lsWidgets, event);
+  lua_pushinteger(lsWidgets, page);
+  if (lua_pcall(lsWidgets, 3, 0, 0) != 0) {
+#else
   if (lua_pcall(lsWidgets, 1, 0, 0) != 0) {
+#endif
     setErrorMessage("refresh()");
   }
 }
@@ -411,7 +439,12 @@ void luaLoadWidgetCallback()
 {
   TRACE("luaLoadWidgetCallback()");
   const char * name=NULL;
-  int widgetOptions=0, createFunction=0, updateFunction=0, refreshFunction=0, backgroundFunction=0;
+  int widgetOptions=0, createFunction=0, updateFunction=0, refreshFunction=0, backgroundFunction=0
+#if defined(INTERACTIVE_WIDGETS)
+  ,pages=0
+#endif
+  ;
+
 
   luaL_checktype(lsWidgets, -1, LUA_TTABLE);
 
@@ -440,6 +473,11 @@ void luaLoadWidgetCallback()
       backgroundFunction = luaL_ref(lsWidgets, LUA_REGISTRYINDEX);
       lua_pushnil(lsWidgets);
     }
+#if defined(INTERACTIVE_WIDGETS)
+    else if (!strcmp(key, "pages")) {
+      pages = lua_tointeger(lsWidgets, -1);
+    }
+#endif
   }
 
   if (name && createFunction) {
@@ -449,6 +487,9 @@ void luaLoadWidgetCallback()
       factory->updateFunction = updateFunction;
       factory->refreshFunction = refreshFunction;
       factory->backgroundFunction = backgroundFunction;   // NOSONAR
+#if defined(INTERACTIVE_WIDGETS)
+      factory->pages = pages;
+#endif
       TRACE("Loaded Lua widget %s", name);
     }
   }

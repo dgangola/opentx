@@ -72,10 +72,18 @@ class Layout2x4: public Layout
       return zone;
     }
 
+#if defined(INTERACTIVE_WIDGETS)
+    virtual void refresh(event_t event, int page);
+#else
     virtual void refresh();
+#endif
 };
 
+#if defined(INTERACTIVE_WIDGETS)
+void Layout2x4::refresh(event_t event, int page)
+#else
 void Layout2x4::refresh()
+#endif
 {
   theme->drawBackground();
 
@@ -113,7 +121,11 @@ void Layout2x4::refresh()
     lcdDrawSolidFilledRect(250, 50, 180, 170, CUSTOM_COLOR);
   }
 
+#if defined(INTERACTIVE_WIDGETS)
+  Layout::refresh(event, page);
+#else
   Layout::refresh();
+#endif
 }
 
 BaseLayoutFactory<Layout2x4> layout2x4("Layout2x4", LBM_LAYOUT_2x4, OPTIONS_LAYOUT_2x4);

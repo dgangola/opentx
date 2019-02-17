@@ -23,6 +23,9 @@
 
 #include <list>
 #include "zone.h"
+#if defined(INTERACTIVE_WIDGETS)
+#include "keys.h"
+#endif
 
 #define MAX_WIDGET_OPTIONS             5
 
@@ -66,7 +69,17 @@ class Widget
       return &persistentData->options[index];
     }
 
+#if defined(INTERACTIVE_WIDGETS)
+    virtual void refresh(event_t event, int page) { refresh(); }
+
+    virtual void refresh()  // TODO: something needs to be pure virtual
+    {
+    }
+
+    virtual int getPages() { TRACE("class Widget: 0 pages"); return(0); }
+#else
     virtual void refresh() = 0;
+#endif
 
     virtual void background()
     {
@@ -115,6 +128,10 @@ class WidgetFactory
 
     virtual Widget * create(const Zone & zone, Widget::PersistentData * persistentData, bool init=true) const = 0;
 
+#if defined(INTERACTIVE_WIDGETS)
+    virtual int getPages() const = 0;
+#endif
+
   protected:
     const char * name;
     const ZoneOption * options;
@@ -137,6 +154,11 @@ class BaseWidgetFactory: public WidgetFactory
 
       return new T(this, zone, persistentData);
     }
+
+#if defined(INTERACTIVE_WIDGETS)
+    virtual int getPages() const { return(0); }
+#endif
+
 };
 
 inline const ZoneOption * Widget::getOptions() const

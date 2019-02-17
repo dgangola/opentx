@@ -31,6 +31,11 @@
 
 Layout * customScreens[MAX_CUSTOM_SCREENS] = { 0, 0, 0, 0, 0 };
 Topbar * topbar;
+#if defined(INTERACTIVE_WIDGETS)
+int page = 0;
+int pages = -1;
+uint8_t lastDir = 0;
+#endif
 
 void drawMainPots()
 {
@@ -144,6 +149,11 @@ int getMainViewsCount()
 
 bool menuMainView(event_t event)
 {
+#if defined(INTERACTIVE_WIDGETS)
+  if (pages == -1) { // TODO: better way to init
+    pages = customScreens[g_model.view]->getPages();
+  }
+#endif
   switch (event) {
     case EVT_ENTRY:
       killEvents(KEY_EXIT);
@@ -152,6 +162,9 @@ bool menuMainView(event_t event)
       break;
 
     case EVT_KEY_LONG(KEY_ENTER):
+#if defined(INTERACTIVE_WIDGETS)
+     if (!pages) {
+#endif
       killEvents(event);
       POPUP_MENU_ADD_ITEM(STR_MODEL_SELECT);
       if (modelHasNotes()) {
@@ -162,6 +175,9 @@ bool menuMainView(event_t event)
       POPUP_MENU_ADD_ITEM(STR_STATISTICS);
       POPUP_MENU_ADD_ITEM(STR_ABOUT_US);
       POPUP_MENU_START(onMainViewMenu);
+#if defined(INTERACTIVE_WIDGETS)
+      }
+#endif
       break;
 
     case EVT_KEY_LONG(KEY_MODEL):
@@ -179,13 +195,42 @@ bool menuMainView(event_t event)
       pushMenu(menuTabScreensSetup[1]);
       return false;
 
+#if defined(INTERACTIVE_WIDGETS)
+    case EVT_KEY_LONG(KEY_EXIT):
+      killEvents(event);
+      if (pages > 0) {
+        customScreens[g_model.view]->refresh(EVT_KEY_LONG(KEY_EXIT), page + 1);
+        g_model.view = circularIncDec(g_model.view, lastDir, 0, getMainViewsCount()-1);
+        pages = customScreens[g_model.view]->getPages();
+        page = lastDir < 0 ? (pages ? pages - 1 : 0) : 0;
+        return false;
+      }
+      else {
+        event = 0;
+        break;
+      }
+#endif
+
 #if defined(PCBX12S)
     case EVT_KEY_FIRST(KEY_PGDN):
 #elif defined(PCBX10)
     case EVT_KEY_BREAK(KEY_PGDN):
 #endif
       storageDirty(EE_MODEL);
+#if defined(INTERACTIVE_WIDGETS)
+      lastDir = 1;
+      if (pages && page < (pages - 1)) {
+        page++;
+        TRACE("increment page: %d", page);
+      }
+      else {
+        g_model.view = circularIncDec(g_model.view, +1, 0, getMainViewsCount()-1);
+        pages = customScreens[g_model.view]->getPages();
+        page = 0;
+      }
+#else
       g_model.view = circularIncDec(g_model.view, +1, 0, getMainViewsCount()-1);
+#endif
       break;
 
     case EVT_KEY_FIRST(KEY_PGUP):
@@ -194,7 +239,19 @@ bool menuMainView(event_t event)
 #endif
       killEvents(event);
       storageDirty(EE_MODEL);
+#if defined(INTERACTIVE_WIDGETS)
+      lastDir = -1;
+      if (pages && page > 0) {
+        page--;
+      }
+      else {
+        g_model.view = circularIncDec(g_model.view, -1, 0, getMainViewsCount()-1);
+        pages = customScreens[g_model.view]->getPages();
+        page = pages ? pages - 1 : 0;
+      }
+#else
       g_model.view = circularIncDec(g_model.view, -1, 0, getMainViewsCount()-1);
+#endif
       break;
 
     case EVT_KEY_FIRST(KEY_EXIT):
@@ -205,7 +262,6 @@ bool menuMainView(event_t event)
 #endif
       break;
   }
-
   if (g_model.view >= getMainViewsCount()) {
     g_model.view = 0;
   }
@@ -213,7 +269,16 @@ bool menuMainView(event_t event)
   for (uint8_t i=0; i<MAX_CUSTOM_SCREENS; i++) {
     if (customScreens[i]) {
       if (i == g_model.view)
+#if defined(INTERACTIVE_WIDGETS)
+      {
+        if (pages && (((event & 7) == KEY_PGDN) || ((event & 7) == KEY_PGUP))) {  // don't send page keys, or long exit key
+          event = 0;
+        }
+        customScreens[i]->refresh(event, page + 1);
+      }
+#else
         customScreens[i]->refresh();
+#endif
       else
         customScreens[i]->background();
     }

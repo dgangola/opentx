@@ -1,5 +1,6 @@
 option(DISK_CACHE "Enable SD card disk cache" YES)
 option(UNEXPECTED_SHUTDOWN "Enable the Unexpected Shutdown screen" YES)
+option(HORUS_INTERACTIVE_WIDGETS "Enable support for widgets receiving key events" NO)
 set(PWR_BUTTON "PRESS" CACHE STRING "Pwr button type (PRESS/SWITCH)")
 
 set(CPU_TYPE STM32F4)
@@ -158,4 +159,8 @@ if(PYTHONINTERP_FOUND)
     COMMAND ${PYTHON_EXECUTABLE} ${RADIO_DIRECTORY}/util/generate_datacopy.py datastructs.h -DPCBHORUS -DPCBX10 -DCPUARM -DCOLORLCD -DBACKUP -DVIRTUAL_INPUTS -Itargets/horus > storage/datacopy.cpp
     DEPENDS ${RADIO_DIRECTORY}/src/datastructs.h ${RADIO_DIRECTORY}/util/generate_datacopy.py
   )
+endif()
+
+if(HORUS_INTERACTIVE_WIDGETS)
+  add_definitions(-DINTERACTIVE_WIDGETS)
 endif()

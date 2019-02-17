@@ -65,10 +65,18 @@ class Layout1x1: public Layout
       return zone;
     }
 
+#if defined(INTERACTIVE_WIDGETS)
+    virtual void refresh(event_t event, int page);
+#else
     virtual void refresh();
+#endif
 };
 
+#if defined(INTERACTIVE_WIDGETS)
+void Layout1x1::refresh(event_t event, int page)
+#else
 void Layout1x1::refresh()
+#endif
 {
   theme->drawBackground();
 
@@ -86,7 +94,11 @@ void Layout1x1::refresh()
     drawTrims(mixerCurrentFlightMode);
   }
 
+#if defined(INTERACTIVE_WIDGETS)
+  Layout::refresh(event, page);
+#else
   Layout::refresh();
+#endif
 }
 
 BaseLayoutFactory<Layout1x1> layout1x1("Layout1x1", LBM_LAYOUT_1x1, OPTIONS_LAYOUT_1x1);

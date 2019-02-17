@@ -64,10 +64,18 @@ class Layout2x1: public Layout
       return zone;
     }
 
+#if defined(INTERACTIVE_WIDGETS)
+    virtual void refresh(event_t event, int page);
+#else
     virtual void refresh();
+#endif
 };
 
+#if defined(INTERACTIVE_WIDGETS)
+void Layout2x1::refresh(event_t event, int page)
+#else
 void Layout2x1::refresh()
+#endif
 {
   theme->drawBackground();
 
@@ -75,7 +83,11 @@ void Layout2x1::refresh()
     drawTopBar();
   }
 
+#if defined(INTERACTIVE_WIDGETS)
+  Layout::refresh(event, page);
+#else
   Layout::refresh();
+#endif
 }
 
 BaseLayoutFactory<Layout2x1> Layout2x1("Layout2x1", LBM_LAYOUT_2x1, OPTIONS_LAYOUT_2x1);

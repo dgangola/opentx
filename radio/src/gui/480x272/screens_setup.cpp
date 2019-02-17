@@ -293,7 +293,11 @@ bool menuWidgetChoice(event_t event)
       break;
   }
 
+#if defined(INTERACTIVE_WIDGETS)
+  currentScreen->refresh(event, 0);
+#else
   currentScreen->refresh();
+#endif
 
   Zone zone = currentContainer->getZone(currentZone);
   lcdDrawFilledRect(0, 0, zone.x-2, LCD_H, SOLID, OVERLAY_COLOR | (8<<24));
@@ -302,7 +306,11 @@ bool menuWidgetChoice(event_t event)
   lcdDrawFilledRect(zone.x-2, zone.y+zone.h+2, zone.w+4, LCD_H-zone.y-zone.h-2, SOLID, OVERLAY_COLOR | (8<<24));
 
   if (currentWidget)
+#if defined(INTERACTIVE_WIDGETS)
+    currentWidget->refresh(event, 0);
+#else
     currentWidget->refresh();
+#endif
 
   if (iterator != getRegisteredWidgets().cbegin()) {
     lcdDrawBitmapPattern(zone.x-10, zone.y+zone.h/2-10, LBM_SWIPE_CIRCLE, TEXT_INVERTED_BGCOLOR);
@@ -344,7 +352,11 @@ bool menuWidgetsSetup(event_t event)
       return false;
   }
 
+#if defined(INTERACTIVE_WIDGETS)
+  currentScreen->refresh(event, 0);
+#else
   currentScreen->refresh();
+#endif
 
   for (int i=currentContainer->getZonesCount()-1; i>=0; i--) {
     Zone zone = currentContainer->getZone(i);

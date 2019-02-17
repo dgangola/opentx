@@ -23,6 +23,9 @@
 
 #include <stdlib.h>
 #include "widget.h"
+#if defined(INTERACTIVE_WIDGETS)
+#include "keys.h"
+#endif
 
 class WidgetsContainerInterface
 {
@@ -125,12 +128,21 @@ class WidgetsContainer: public WidgetsContainerInterface
 
     virtual Zone getZone(unsigned int index) const = 0;
 
+#if defined(INTERACTIVE_WIDGETS)
+    virtual void refresh() { refresh(0, 0); }
+    virtual void refresh(event_t event, int page)
+#else
     virtual void refresh()
+#endif
     {
       if (widgets) {
         for (int i=0; i<N; i++) {
           if (widgets[i]) {
+#if defined(INTERACTIVE_WIDGETS)
+            widgets[i]->refresh(event, page);
+#else
             widgets[i]->refresh();
+#endif
           }
         }
       }
@@ -146,6 +158,21 @@ class WidgetsContainer: public WidgetsContainerInterface
         }
       }
     }
+
+#if defined(INTERACTIVE_WIDGETS)
+    virtual int getPages()
+    {
+      int pages = 0;
+      if (widgets) {
+        for (int i=0; i<N; i++) {
+          if (widgets[i]) {
+            pages += widgets[i]->getPages();
+          }
+        }
+      }
+      return(pages);
+    }
+#endif
 
   protected:
     PersistentData * persistentData;
