@@ -25,6 +25,7 @@
 #include "widget.h"
 #if defined(INTERACTIVE_WIDGETS)
 #include "keys.h"
+#include "interwidge.h"
 #endif
 
 class WidgetsContainerInterface
@@ -69,6 +70,9 @@ class WidgetsContainer: public WidgetsContainerInterface
       persistentData(persistentData)
     {
       widgets = (Widget **)calloc(N, sizeof(Widget *));
+#if defined(INTERACTIVE_WIDGETS)
+      pages = -1;
+#endif
     }
 
     virtual ~WidgetsContainer()
@@ -119,6 +123,72 @@ class WidgetsContainer: public WidgetsContainerInterface
       }
     }
 
+#if defined(INTERACTIVE_WIDGETS)
+
+    int getInteractiveIndex(int16_t page)
+    {
+      int index = 0;
+      int loops = page + 1;
+      for(int i = 0; i < loops; i++) {
+        while(!(widgets[index]->getPages())) {
+          index++;
+          }
+        index++;
+       }
+    index--;
+    return(index);
+    }
+
+    virtual void refresh() { refresh(0, 0); }
+    virtual void refresh(event_t event, int page)
+    {
+      int16_t pages = getPages();
+      int16_t zc = getZonesCount();
+      if (widgets) {
+        for (int i = 0; i < zc; i++) {
+          if (widgets[i]) {
+            if (pages && (zc == 1)) { //full-screen interactive
+              widgets[i]->refresh(event, page);
+            }
+            else if (pages && (zc > 1) && (i == getInteractiveIndex(page))) { // multi-zone interactive
+              Zone zone = getZone(i);
+              interWidge::drawActiveWidgetHighlight(zone);
+              widgets[i]->refresh(event, 0);
+            }
+            else {
+              widgets[i]->refresh(0, 0);
+            }
+          }
+        }
+      }
+    }
+
+protected:
+    int pages;
+public:
+    virtual int getPages()
+    {
+      if (pages > -1) {
+        return(pages);
+      }
+      int zc = getZonesCount();
+      if (zc == 1) {
+        pages = widgets[0]->getPages();
+        return(pages);
+      }
+      pages = 0;
+      if (widgets) {
+        for (int i = 0; i < N; i++) {
+          if (widgets[i]) {
+            pages += widgets[i]->getPages();
+          }
+        }
+      }
+      return(pages);
+    }
+
+#endif
+
     inline ZoneOptionValue * getOptionValue(unsigned int index) const
     {
       return &persistentData->options[index];
@@ -128,25 +198,18 @@ class WidgetsContainer: public WidgetsContainerInterface
 
     virtual Zone getZone(unsigned int index) const = 0;
 
-#if defined(INTERACTIVE_WIDGETS)
-    virtual void refresh() { refresh(0, 0); }
-    virtual void refresh(event_t event, int page)
-#else
+#if !defined(INTERACTIVE_WIDGETS)
     virtual void refresh()
-#endif
     {
       if (widgets) {
         for (int i=0; i<N; i++) {
           if (widgets[i]) {
-#if defined(INTERACTIVE_WIDGETS)
-            widgets[i]->refresh(event, page);
-#else
             widgets[i]->refresh();
-#endif
           }
         }
       }
     }
+#endif
 
     virtual void background()
     {
@@ -158,21 +221,6 @@ class WidgetsContainer: public WidgetsContainerInterface
         }
       }
     }
-
-#if defined(INTERACTIVE_WIDGETS)
-    virtual int getPages()
-    {
-      int pages = 0;
-      if (widgets) {
-        for (int i=0; i<N; i++) {
-          if (widgets[i]) {
-            pages += widgets[i]->getPages();
-          }
-        }
-      }
-      return(pages);
-    }
-#endif
 
   protected:
     PersistentData * persistentData;

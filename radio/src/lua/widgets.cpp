@@ -411,7 +411,7 @@ void LuaWidget::refresh()
   lua_rawgeti(lsWidgets, LUA_REGISTRYINDEX, widgetData);
 #if defined(INTERACTIVE_WIDGETS)
   lua_pushinteger(lsWidgets, event);
-  lua_pushinteger(lsWidgets, page);
+  lua_pushinteger(lsWidgets, page + 1);
   if (lua_pcall(lsWidgets, 3, 0, 0) != 0) {
 #else
   if (lua_pcall(lsWidgets, 1, 0, 0) != 0) {

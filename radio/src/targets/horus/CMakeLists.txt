@@ -163,4 +163,5 @@ endif()
 
 if(HORUS_INTERACTIVE_WIDGETS)
   add_definitions(-DINTERACTIVE_WIDGETS)
+set(TARGET_SRC ${TARGET_SRC} interwidge.cpp)
 endif()

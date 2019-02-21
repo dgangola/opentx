@@ -76,7 +76,7 @@ class Widget
     {
     }
 
-    virtual int getPages() { TRACE("class Widget: 0 pages"); return(0); }
+    virtual int getPages() { return(0); }
 #else
     virtual void refresh() = 0;
 #endif

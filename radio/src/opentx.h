@@ -1794,4 +1794,8 @@ extern JitterMeter<uint16_t> avgJitter[NUM_ANALOGS];
 #include "bluetooth.h"
 #endif
 
+#if defined(INTERACTIVE_WIDGETS)
+#include "interwidge.h"
+#endif
+
 #endif // _OPENTX_H_

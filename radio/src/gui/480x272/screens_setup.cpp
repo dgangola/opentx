@@ -294,7 +294,7 @@ bool menuWidgetChoice(event_t event)
   }
 
 #if defined(INTERACTIVE_WIDGETS)
-  currentScreen->refresh(event, 0);
+  currentScreen->refresh(0, -1);
 #else
   currentScreen->refresh();
 #endif
@@ -307,7 +307,7 @@ bool menuWidgetChoice(event_t event)
 
   if (currentWidget)
 #if defined(INTERACTIVE_WIDGETS)
-    currentWidget->refresh(event, 0);
+    currentWidget->refresh(0, -1);
 #else
     currentWidget->refresh();
 #endif
@@ -353,7 +353,7 @@ bool menuWidgetsSetup(event_t event)
   }
 
 #if defined(INTERACTIVE_WIDGETS)
-  currentScreen->refresh(event, 0);
+  currentScreen->refresh(0, -1);
 #else
   currentScreen->refresh();
 #endif
