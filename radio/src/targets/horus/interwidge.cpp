@@ -25,17 +25,35 @@ namespace interWidge {
   int8_t page = 0;
   int8_t pages = -1;
   int8_t lastDir = 1;
+  enum specialCode_t : uint8_t { NONE, ENTER, EXIT };
+  specialCode_t specialCode = NONE;
   bool lastEventWasExit = false;
 
+  /*
+  ** This gets called at the top of menuMainView. If pages is set to -1, it initializes some variables. This
+  ** may be from the radio just powering up, or invalidate() being called. invalidate() is called when anything
+  ** that can potentially change the main pages is called.
+  */
   void init()
   {
     if (pages == -1) {
       pages = customScreens[g_model.view]->getPages();
+      page = 0;
+      // lastDir = 1; // we can probably leave the direction alone.  The user will find themselves at "page 0", but at least the direction will be the same
+      specialCode = ENTER;  // signal start of interaction to whatever widget is showing, may be non-interactive, and ignore this
+      lastEventWasExit = false;  // trap EVT_KEY_BREAK(KEY_EXIT) resulting from exiting other screens
       TRACE("Init set pages at %d", pages);
     }
   }
 
-  int getMainViewsCount()  // this was local to view_main.cpp, and it's small.  Don't want to clutter other files more than I must.
+  void invalidate()
+  {
+    TRACE("interWidge::invalidate()");
+    customScreens[g_model.view]->refresh(EVT_KEY_LONG(KEY_EXIT), page);  // signal shutdown to widget
+    pages = -1;  // trigger init on next menuMainView
+  }
+
+  int getMainViewsCount()  // this was local to view_main.cpp.  Don't want to clutter other files more than I must.
   {
     for (int index=1; index<MAX_CUSTOM_SCREENS; index++) {
       if (!customScreens[index]) {
@@ -45,22 +63,21 @@ namespace interWidge {
     return MAX_CUSTOM_SCREENS;
   }
 
-  void drawActiveWidgetHighlight(Zone zone)
+void drawActiveWidgetHighlight(Zone zone)
   {
-    LcdFlags color = TEXT_INVERTED_BGCOLOR; // pointless waste of RAM
     int padding = 4;
     int thick = 2;
-    lcdDrawSolidRect(zone.x - padding, zone.y - padding, zone.w + 2 * padding, zone.h + 2 * padding, thick, color);
+    lcdDrawSolidRect(zone.x - padding, zone.y - padding, zone.w + 2 * padding, zone.h + 2 * padding, thick, MAINVIEW_PANES_COLOR);
   }
 
   event_t filterEvents(event_t event)
   {
     if (event && (event == EVT_KEY_BREAK(KEY_EXIT))) { // filter to remove "spurious" EVT_KEY_BREAK(KEY_EXIT) events on return from system, model, and telemetry menus
-      if(lastEventWasExit) {
+      if(lastEventWasExit) { // rather than filtering, adding killEvents() after exiting these views might be better
+        lastEventWasExit = false;
         return(event);
       }
       else {
-        lastEventWasExit = false;
         event = 0;
       }
     }
@@ -72,7 +89,16 @@ namespace interWidge {
     if ((key == KEY_PGUP) || (key == KEY_PGDN)) {  // don't pass PGUP or PGDN events
       event = 0;
     }
-    return(event);  // This is simpler than expected. What's wrong?
+    if ( ! event && specialCode != NONE) {
+      if (specialCode == ENTER) {
+        event = EVT_KEY_FIRST(KEY_PGDN);  // Question: Change for X12S, or keep it uniform?
+      }
+      else if (specialCode == EXIT) {
+        event = EVT_KEY_LONG(KEY_EXIT);
+      }
+      specialCode = NONE;
+    }
+    return(event);
   }
 
   bool userExitScreen(event_t event)
@@ -91,32 +117,56 @@ namespace interWidge {
     }
   }
 
+
+// the next two funcs should be rolled into one
   void userIncrementPage()
   {
-      lastDir = 1;
-      if (pages && page < (pages - 1)) {
-        page++;
-        TRACE("increment page: %d", page);
+    TRACE("userIncrementPage");
+    lastDir = 1;
+    if (pages && page < (pages - 1)) {
+      if (customScreens[g_model.view]->getZonesCount() != 1) { // multi-zone interactive
+        customScreens[g_model.view]->refresh(EVT_KEY_LONG(KEY_EXIT), page);
+        specialCode = ENTER;
       }
-      else {
-        g_model.view = circularIncDec(g_model.view, +1, 0, getMainViewsCount()-1);
-        pages = customScreens[g_model.view]->getPages();
-        page = 0;
+      page++;
+      TRACE("increment page: %d", page);
+    }
+    else {
+      if (pages) {
+        customScreens[g_model.view]->refresh(EVT_KEY_LONG(KEY_EXIT), page); // either single or multi - we're leaving the page
       }
+      g_model.view = circularIncDec(g_model.view, +1, 0, getMainViewsCount()-1);
+      pages = customScreens[g_model.view]->getPages();
+      page = 0;
+      if (pages) {
+        specialCode = ENTER;
+      }
+    }
   }
 
   void userDecrementPage()
   {
-      lastDir = -1;      
-      if (pages && page > 0) {
-        page--;
+    TRACE("userDecrementPage");
+    lastDir = -1;
+    if (pages && page > 0) {
+      if (customScreens[g_model.view]->getZonesCount() != 1) { // multi-zone interactive
+        customScreens[g_model.view]->refresh(EVT_KEY_LONG(KEY_EXIT), page);
+        specialCode = ENTER;
       }
-      else {
-        g_model.view = circularIncDec(g_model.view, -1, 0, getMainViewsCount()-1);
-        pages = customScreens[g_model.view]->getPages();
-        page = pages ? pages - 1 : 0;
-        TRACE("increment page: %d", page);
+      page--;
+    }
+    else {
+      if (pages) {
+        customScreens[g_model.view]->refresh(EVT_KEY_LONG(KEY_EXIT), page); // either single or multi - we're leaving the page
       }
+      g_model.view = circularIncDec(g_model.view, -1, 0, getMainViewsCount()-1);
+      pages = customScreens[g_model.view]->getPages();
+      page = pages ? pages - 1 : 0;
+      TRACE("increment page: %d", page);
+      if (pages) {
+        specialCode = ENTER;
+      }
+    }
   }
 
   bool screenIsInteractive()
@@ -130,9 +180,6 @@ namespace interWidge {
   }
 
 }
-#if defined(INTERACTIVE_WIDGETS)
-#else
-#endif
 
 #endif
 

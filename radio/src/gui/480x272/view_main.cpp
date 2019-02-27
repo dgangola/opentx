@@ -29,6 +29,12 @@
 #define TRIM_LEN                       80
 #define POTS_LINE_Y                    (LCD_H-20)
 
+#if defined(INTERACTIVE_WIDGETS)
+#define  INTERWIDGE_INVALIDATE()  interWidge::invalidate();
+#else
+#define  INTERWIDGE_INVALIDATE()
+#endif
+
 Layout * customScreens[MAX_CUSTOM_SCREENS] = { 0, 0, 0, 0, 0 };
 Topbar * topbar;
 
@@ -91,6 +97,7 @@ void drawTrims(uint8_t flightMode)
 void onMainViewMenu(const char *result)
 {
   if (result == STR_MODEL_SELECT) {
+    INTERWIDGE_INVALIDATE();
     chainMenu(menuModelSelect);
   }
   else if (result == STR_RESET_TIMER1) {
@@ -113,15 +120,18 @@ void onMainViewMenu(const char *result)
     POPUP_MENU_ADD_ITEM(STR_RESET_TELEMETRY);
   }
   else if (result == STR_RESET_TELEMETRY) {
+    INTERWIDGE_INVALIDATE();
     telemetryReset();
   }
   else if (result == STR_RESET_FLIGHT) {
+    INTERWIDGE_INVALIDATE();
     flightReset();
   }
   else if (result == STR_STATISTICS) {
     pushMenu(menuTabStats[0]);
   }
   else if (result == STR_SETUP_SCREENS) {
+    INTERWIDGE_INVALIDATE();
     pushMenu(menuTabScreensSetup[1]);
   }
   else if (result == STR_ABOUT_US) {
@@ -145,7 +155,7 @@ int getMainViewsCount()
 bool menuMainView(event_t event)
 {
 #if defined(INTERACTIVE_WIDGETS)
-     interWidge::init();  // TODO: Better way to init
+     interWidge::init();  // TODO: Find better way to init
 #endif
   switch (event) {
     case EVT_ENTRY:
@@ -156,7 +166,7 @@ bool menuMainView(event_t event)
 
     case EVT_KEY_LONG(KEY_ENTER):
 #if defined(INTERACTIVE_WIDGETS)
-//     if ( ! interWidge::screenIsInteractive()) { // until I make this an option, don't try to send long enter to widget
+//     if ( ! interWidge::screenIsInteractive()) { // until this becomes an option, don't try to send long enter to widget
 #endif
       killEvents(event);
       POPUP_MENU_ADD_ITEM(STR_MODEL_SELECT);
@@ -175,16 +185,19 @@ bool menuMainView(event_t event)
 
     case EVT_KEY_LONG(KEY_MODEL):
       killEvents(event);
+      INTERWIDGE_INVALIDATE();
       pushMenu(menuTabModel[0]);
       return false;
 
     case EVT_KEY_LONG(KEY_RADIO):
       killEvents(event);
+      INTERWIDGE_INVALIDATE();
       pushMenu(menuTabGeneral[0]);
       return false;
 
     case EVT_KEY_LONG(KEY_TELEM):
       killEvents(event);
+      INTERWIDGE_INVALIDATE();
       pushMenu(menuTabScreensSetup[1]);
       return false;
 

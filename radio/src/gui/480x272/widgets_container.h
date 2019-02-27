@@ -87,6 +87,9 @@ class WidgetsContainer: public WidgetsContainerInterface
 
     virtual void createWidget(unsigned int index, const WidgetFactory * factory)
     {
+#if defined(INTERACTIVE_WIDGETS)
+      pages = -1;
+#endif
       if (widgets) {
         memset(persistentData->zones[index].widgetName, 0, sizeof(persistentData->zones[index].widgetName));
         if (factory) {
@@ -106,6 +109,9 @@ class WidgetsContainer: public WidgetsContainerInterface
 
     virtual void load()
     {
+#if defined(INTERACTIVE_WIDGETS)
+      pages = -1;
+#endif
       if (widgets) {
         unsigned int count = getZonesCount();
         for (unsigned int i=0; i<count; i++) {
@@ -165,23 +171,27 @@ class WidgetsContainer: public WidgetsContainerInterface
 
 protected:
     int pages;
+
 public:
     virtual int getPages()
     {
       if (pages > -1) {
         return(pages);
       }
-      int zc = getZonesCount();
-      if (zc == 1) {
-        pages = widgets[0]->getPages();
+      pages = 0;
+      if ( ! widgets) {
         return(pages);
       }
-      pages = 0;
-      if (widgets) {
-        for (int i = 0; i < N; i++) {
-          if (widgets[i]) {
-            pages += widgets[i]->getPages();
-          }
+      int zc = getZonesCount();
+      if (zc == 1) {
+        if (widgets[0]) {
+          pages = widgets[0]->getPages();
+        }
+        return(pages);
+      }
+      for (int i = 0; i < N; i++) {
+        if (widgets[i]) {
+          pages += widgets[i]->getPages();
         }
       }
       return(pages);

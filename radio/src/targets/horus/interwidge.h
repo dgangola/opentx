@@ -25,6 +25,7 @@
 
 namespace interWidge {
   void init();
+  void invalidate();
   void drawActiveWidgetHighlight(Zone zone);
   event_t filterEvents(event_t event);
   bool userExitScreen(event_t event);
