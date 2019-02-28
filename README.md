@@ -1,3 +1,4 @@
+## This is not the official OpenTX repository.  This contains Dave Gangola's modifications.
 ## OpenTX 2.2 Branch
 
 [![Travis build Status](https://travis-ci.org/opentx/opentx.svg?branch=2.2)](https://travis-ci.org/opentx/opentx)
