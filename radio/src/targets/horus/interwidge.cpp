@@ -42,13 +42,11 @@ namespace interWidge {
       // lastDir = 1; // we can probably leave the direction alone.  The user will find themselves at "page 0", but at least the direction will be the same
       specialCode = ENTER;  // signal start of interaction to whatever widget is showing, may be non-interactive, and ignore this
       lastEventWasExit = false;  // trap EVT_KEY_BREAK(KEY_EXIT) resulting from exiting other screens
-      TRACE("Init set pages at %d", pages);
     }
   }
 
   void invalidate()
   {
-    TRACE("interWidge::invalidate()");
     customScreens[g_model.view]->refresh(EVT_KEY_LONG(KEY_EXIT), page);  // signal shutdown to widget
     pages = -1;  // trigger init on next menuMainView
   }
@@ -105,7 +103,6 @@ void drawActiveWidgetHighlight(Zone zone)
   {
     if (pages > 0) {
       killEvents(event);
-      TRACE("userExitScreen refresh %d", page);
       customScreens[g_model.view]->refresh(EVT_KEY_LONG(KEY_EXIT), page);
       g_model.view = circularIncDec(g_model.view, lastDir, 0, getMainViewsCount()-1);
       pages = customScreens[g_model.view]->getPages(); 
@@ -121,7 +118,6 @@ void drawActiveWidgetHighlight(Zone zone)
 // the next two funcs should be rolled into one
   void userIncrementPage()
   {
-    TRACE("userIncrementPage");
     lastDir = 1;
     if (pages && page < (pages - 1)) {
       if (customScreens[g_model.view]->getZonesCount() != 1) { // multi-zone interactive
@@ -129,7 +125,6 @@ void drawActiveWidgetHighlight(Zone zone)
         specialCode = ENTER;
       }
       page++;
-      TRACE("increment page: %d", page);
     }
     else {
       if (pages) {
@@ -146,7 +141,6 @@ void drawActiveWidgetHighlight(Zone zone)
 
   void userDecrementPage()
   {
-    TRACE("userDecrementPage");
     lastDir = -1;
     if (pages && page > 0) {
       if (customScreens[g_model.view]->getZonesCount() != 1) { // multi-zone interactive
@@ -162,7 +156,6 @@ void drawActiveWidgetHighlight(Zone zone)
       g_model.view = circularIncDec(g_model.view, -1, 0, getMainViewsCount()-1);
       pages = customScreens[g_model.view]->getPages();
       page = pages ? pages - 1 : 0;
-      TRACE("increment page: %d", page);
       if (pages) {
         specialCode = ENTER;
       }

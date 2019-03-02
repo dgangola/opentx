@@ -1406,6 +1406,9 @@ const luaR_value_entry opentxConstants[] = {
   { "EVT_MODEL_FIRST",  EVT_KEY_FIRST(KEY_MODEL) },
   { "EVT_SYS_FIRST",  EVT_KEY_FIRST(KEY_RADIO) },
   { "EVT_RTN_FIRST",  EVT_KEY_FIRST(KEY_EXIT) },
+#if defined(INTERACTIVE_WIDGETS)
+  { "EVT_EXIT_LONG",  EVT_KEY_LONG(KEY_EXIT) }, // which convention to follow? EVT_RTN_FIRST, or EVT_EXIT_BREAK?
+#endif
 #elif defined(PCBXLITE)
   { "EVT_DOWN_FIRST", EVT_KEY_FIRST(KEY_DOWN) },
   { "EVT_UP_FIRST", EVT_KEY_FIRST(KEY_UP) },
